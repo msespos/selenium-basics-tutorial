@@ -1,11 +1,15 @@
+const fs = require("fs");
 const selenium = require("selenium-webdriver");
 const By = selenium.By;
+
+const HomePage = require('./pages/home')
 
 const driver = new selenium.Builder()
   .forBrowser("chrome")
   .build()
 
-driver.get(process.env.URL);
+const homePage = new HomePage(driver);
+homePage.open();
 
 const invitees = [
    'Gonzalo Torres del Fierro',
@@ -34,31 +38,17 @@ const invitees = [
    'Brent Suggs'
 ];
 
-const locators = {
-  inviteeForm: By.id("registrar"),
-  inviteeNameField: By.css("#registrar input[name='name']"),
-  toggleNonRespondersVisibility: By.css(".main > div input"),
-  toBeRemoved: By.xpath(`//span[text() = "Shadd Anderson"]/../button[last()]`),
-  removeButtonForInvitee: invitee => By.xpath(`//span[text() = "${invitee}"]/../button[last()]`)
-}
+invitees.forEach(homePage.addInvitee, homePage);
 
-function addInvitee(name) {
-  driver.findElement(locators.inviteeNameField).sendKeys(name);
-  driver.findElement(locators.inviteeForm).submit();
-}
-
-function removeInvitee(invitee) {
-  driver.findElement(locators.removeButtonForInvitee(invitee)).click();
-}
-
-function toggleNonRespondersVisibility() {
-  driver.findElement(locators.toggleNonRespondersVisibility).click();
-}
-
-invitees.forEach(addInvitee);
-
-setTimeout(function(){
-  removeInvitee("Shadd Anderson");
+setTimeout(() => {
+  homePage.findInviteeByName("Shadd Anderson").remove();
+  homePage.findInviteeByName("Jennifer Nordell").toggleConfirmation();
+  homePage.findInviteeByName("Jennifer Nordell").changeName("Craig Dennis");
+  driver.takeScreenshot().then((image, err) => {
+    fs.writeFile("weird-layout.png", image, "base64", err => console.error(err));
+  });
 }, 3000);
 
-//toggleNonRespondersVisibility();
+
+
+//homePage.toggleNonRespondersVisibility();
